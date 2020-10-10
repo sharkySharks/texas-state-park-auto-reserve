@@ -1,0 +1,8 @@
+# application configuration
+reservation_details.json
+.env
+
+# virtualenv
+.venv
+venv/
+ENV/
