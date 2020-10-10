@@ -1,7 +1,22 @@
 {
     "destination": "",
-    "arrival_date": "",
+    "arrival_date": "MM/DD/YYYY",
     "days_of_stay": 0,
     "number_of_vehicles": 0,
-    "wait_for_opening": true
+    "number_of_adults": 0,
+    "number_of_children": 0,
+    "wait_for_opening": false,
+    "preferences": [
+        "either"
+    ],
+    "credit_card": {
+        "type": "",
+        "number": "",
+        "cvc" : "",
+        "exp_month": "",
+        "exp_year": "",
+        "first_name": "",
+        "last_name": "",
+        "zip_code": ""
+    }
 }

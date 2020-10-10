@@ -1,4 +1,4 @@
-# Texas State Park Auto Reserve [WIP]
+# Texas State Park Auto Reserve
 
 An application that automates making Texas State Park reservations through the [Texas State Park website](https://texasstateparks.reserveamerica.com/).
 
@@ -24,8 +24,23 @@ source ENV/bin/activate
 pip3 install -r requirements.txt
 python3 app.py
 ```
+### Values for reservation_details.json
+| Key                   | Default Values (type)         | Description  |
+|---                    |---                            |---           |
+| `destination`         | `""` (string)                 | The Texas State Park you want to visit |
+| `arrival_date`        | `"MM/DD/YYYY"` (string)       | First day you want to visit, format is important: `MM/DD/YYYY` |
+| `days_of_stay`        | `0` (integer)                 | Number of days you want to stay |
+| `number_of_vehicles`  | `0` (integer)                 | how many vehicles are going into the park |
+| `number_of_adults`    | `0` (integer)                 | how many adults are going |
+| `number_of_children`  | `0` (integer)                 | how many children are going |
+| `wait_for_opening`    | `false` (bool)                | continuously check for an opening an auto book when one is available |
+| `preferences`         | `[ "either" ]` (array)        | length should match `days_of_stay`. values are: `morning`, `afternoon`, `either` |
+| `credit_card`         | empty strings object          | credit card information for booking |
 
 ## What is the application doing exactly?
 I use [selenium web driver for python](https://selenium-python.readthedocs.io/index.html) to navigate to the Texas State Park website, login, and go through the reservation steps. If the days the requestor want to go to the park are available, then I look at the requestor's preferences for morning or afternoon visitation and make the reservation, including payment. 
 
 If the dates are already booked then the application continuously checks for avilability on the requested days until either, a) an available spot opens up, then it books the opening, or b) stops after the requestor's visitation date has passed.
+
+## Questions or feedback?
+Feel free to submit a github issue.

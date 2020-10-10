@@ -1,5 +1,8 @@
+from datetime import date, datetime
 import json
 import os
+import re
+import sys, traceback
 import time
 
 from selenium import webdriver
@@ -18,10 +21,18 @@ def main():
        rd = json.load(json_file)
 
     driver.get("https://texasstateparks.reserveamerica.com/")
-        
-    sign_in()
-    search_for_location()
-    reserve(wait_for_opening=rd["wait_for_opening"])
+
+    try:    
+        sign_in()
+        search_for_location()
+        select_reservation(wait_for_opening=rd["wait_for_opening"])
+        book_reservation()
+    except Exception as e:
+        traceback.print_exc(file=sys.stdout)
+        print(f'Errors returned: {e}')
+        return
+    
+    print("RESERVATION SUCCESSFULLY MADE!")
 
     driver.close()
 
@@ -62,22 +73,120 @@ def search_for_location():
     # click search availability
     driver.find_element_by_id("btnbookdates").click()
 
-def reserve(wait_for_opening=False):
+def select_reservation(wait_for_opening=False):
     # get current availability
     locals()[f'{rd["destination"]} Schedule'] = {}
+    some_selection_made = False 
+
+    # only process if the requested date is earlier than the current date
+    today = date.today()
+    requested_date = datetime.date(datetime.strptime(rd["arrival_date"], '%m/%d/%Y'))
+    if today > requested_date:
+        raise ValueError(f'requested date ( {requested_date} ) is after current date ( {today} )')
+
+    # select days from scheduling matrix
     for x in range(rd["days_of_stay"]):
         calendar_day = driver.find_elements_by_css_selector(f"div.matrixheader div.calendar div.date")[x].text
         calendar_weekday = driver.find_elements_by_css_selector(f"div.matrixheader div.calendar div.weekday")[x].text
         
         locals()[f'{rd["destination"]} Schedule'][f'{calendar_weekday}-{calendar_day}'] = {}
+        locals()[f'{rd["destination"]} Schedule'][f'{calendar_weekday}-{calendar_day}']["selected"] = "NONE"
         morning = driver.find_elements_by_css_selector(f"div.matrixrow div.status:nth-of-type({x+1})")[0]
         afternoon = driver.find_elements_by_css_selector(f"div.matrixrow div.status:nth-of-type({x+1})")[1]
-        locals()[f'{rd["destination"]} Schedule'][f'{calendar_weekday}-{calendar_day}']["morning"] = morning.get_attribute("title")
-        locals()[f'{rd["destination"]} Schedule'][f'{calendar_weekday}-{calendar_day}']["afternoon"] = afternoon.get_attribute("title")
+        morning_availability = morning.get_attribute("title")
+        afternoon_availability = afternoon.get_attribute("title")
+        locals()[f'{rd["destination"]} Schedule'][f'{calendar_weekday}-{calendar_day}']["morning"] = morning_availability
+        locals()[f'{rd["destination"]} Schedule'][f'{calendar_weekday}-{calendar_day}']["afternoon"] = afternoon_availability
+
+        if morning_availability == "Reserved" and afternoon_availability == "Reserved":
+            continue
+
+        # try to select based on preferences provided
+        if rd["preferences"][x] == "morning" and morning_availability == "Available":
+            morning.click()
+            locals()[f'{rd["destination"]} Schedule'][f'{calendar_weekday}-{calendar_day}']["selected"] = "morning"
+            some_selection_made = True
+        elif rd["preferences"][x] == "afternoon" and afternoon_availability == "Available":
+            afternoon.click()
+            locals()[f'{rd["destination"]} Schedule'][f'{calendar_weekday}-{calendar_day}']["selected"] = "afternoon"
+            some_selection_made = True
+        elif rd["preferences"][x] == "either":
+            if morning_availability == "Available":
+                morning.click()
+                locals()[f'{rd["destination"]} Schedule'][f'{calendar_weekday}-{calendar_day}']["selected"] = "morning"
+                some_selection_made = True
+            elif afternoon_availability == "Available":
+                afternoon.click()
+                locals()[f'{rd["destination"]} Schedule'][f'{calendar_weekday}-{calendar_day}']["selected"] = "afternoon"
+                some_selection_made = True
     
     print(f'Day Pass Availability for {rd["days_of_stay"]} day pass(es) starting on {rd["arrival_date"]}:')
     print(locals()[f'{rd["destination"]} Schedule'])
+    
+    # if any selection is made, proceed with booking, otherwise wait for a booking to open up and try again
+    if some_selection_made:
+        driver.find_element_by_id("btnbookdates").click()
+    elif rd["wait_for_opening"]:
+        print("Waiting for opening in reservation...")
+        time.sleep(30)
+        driver.refresh()
+        select_reservation(rd["wait_for_opening"])
+    else:
+        print("No reservations are available for your requested time. Set 'wait_for_opening' to true if you want me to keep trying for you.")
+    
+def book_reservation():
+    # select vehicle information - Car
+    driver.find_element_by_xpath("//select[@id='0_vehicletype']/option[text()='Car']").click()
 
+    # enter number of adults
+    adults = driver.find_element_by_id("v_qtyPersons_1id")
+    adults.clear()
+    adults.send_keys(rd["number_of_adults"])
+
+    # enter number of children
+    children = driver.find_element_by_id("v_qtyPersons_18id")
+    children.clear()
+    children.send_keys(rd["number_of_children"])
+    
+    # agree to information
+    driver.find_element_by_id("agreement").click()
+    
+    # go to shopping cart
+    driver.find_element_by_id("continueshop").click()
+    driver.find_element_by_id("chkout").click()
+    
+    # shopping cart checkout - card information
+    lower_cc_type = rd["credit_card"]["type"].lower()
+    if re.search(lower_cc_type, "discover"):
+        card_type = "Discover"
+    elif re.search(lower_cc_type, "mastercard"):
+        card_type = "MasterCard"
+    elif re.search(lower_cc_type, "visa"):
+        card_type = "Visa"
+    else:
+        raise ValueError(f'only visa, mastercard, discover accepted. received: {lower_cc_type}')
+
+    driver.find_element_by_xpath(f'//select[@id="cardTypeId_1"]/option[text()="{card_type}"]').click()
+    cc_num = driver.find_element_by_id("cardnum_1")
+    cc_num.send_keys(rd["credit_card"]["number"])
+    cc_cvc = driver.find_element_by_id("seccode_1")
+    cc_cvc.send_keys(rd["credit_card"]["cvc"])
+    cc_exp_month = driver.find_element_by_id("expmonth_1")
+    cc_exp_month.send_keys(rd["credit_card"]["exp_month"])
+    cc_exp_year = driver.find_element_by_id("expyear_1")
+    cc_exp_year.send_keys(rd["credit_card"]["exp_year"])
+    cc_first_name = driver.find_element_by_id("fname_1")
+    cc_first_name.send_keys(rd["credit_card"]["first_name"])
+    cc_last_name = driver.find_element_by_id("lname_1")
+    cc_last_name.send_keys(rd["credit_card"]["last_name"])
+    cc_zip = driver.find_element_by_id("ccPostCode_1")
+    cc_zip.send_keys(rd["credit_card"]["zip_code"])
+
+    # read and accept button
+    driver.find_element_by_id("ackacc").click()
+
+    # make reservation
+    driver.find_element_by_id("chkout").click()
 
 if __name__ == "__main__":
     main()
