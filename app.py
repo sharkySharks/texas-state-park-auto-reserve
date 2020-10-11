@@ -22,14 +22,35 @@ def main():
 
     driver.get("https://texasstateparks.reserveamerica.com/")
 
-    try:    
+    try:
+        selection_made = False
+  
         sign_in()
         search_for_location()
-        select_reservation(wait_for_opening=rd["wait_for_opening"])
+        selection_made = select_reservation()
+        if not rd["wait_for_opening"]:
+            if not selection_made:
+                print("No reservations are available for your requested time. Set 'wait_for_opening' to true if you want me to keep trying for you.")
+                return
+        elif rd["wait_for_opening"]:
+            # check every 30 seconds for an opening
+            while not selection_made:
+                # only continue processing if the requested date is earlier than the current date
+                today = date.today()
+                requested_date = datetime.date(datetime.strptime(rd["arrival_date"], '%m/%d/%Y'))
+                if today > requested_date:
+                    raise ValueError(f'requested date ( {requested_date} ) is after current date ( {today} )')
+
+                print("Waiting for opening in reservation...")
+                time.sleep(30)
+                driver.refresh()
+                selection_made = select_reservation()
+
         book_reservation()
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
         print(f'Errors returned: {e}')
+        driver.close()
         return
     
     print("RESERVATION SUCCESSFULLY MADE!")
@@ -73,17 +94,10 @@ def search_for_location():
     # click search availability
     driver.find_element_by_id("btnbookdates").click()
 
-def select_reservation(wait_for_opening=False):
-    # get current availability
-    locals()[f'{rd["destination"]} Schedule'] = {}
+def select_reservation():
     some_selection_made = False 
-
-    # only process if the requested date is earlier than the current date
-    today = date.today()
-    requested_date = datetime.date(datetime.strptime(rd["arrival_date"], '%m/%d/%Y'))
-    if today > requested_date:
-        raise ValueError(f'requested date ( {requested_date} ) is after current date ( {today} )')
-
+    locals()[f'{rd["destination"]} Schedule'] = {}
+    
     # select days from scheduling matrix
     for x in range(rd["days_of_stay"]):
         calendar_day = driver.find_elements_by_css_selector(f"div.matrixheader div.calendar div.date")[x].text
@@ -126,13 +140,8 @@ def select_reservation(wait_for_opening=False):
     # if any selection is made, proceed with booking, otherwise wait for a booking to open up and try again
     if some_selection_made:
         driver.find_element_by_id("btnbookdates").click()
-    elif rd["wait_for_opening"]:
-        print("Waiting for opening in reservation...")
-        time.sleep(30)
-        driver.refresh()
-        select_reservation(rd["wait_for_opening"])
-    else:
-        print("No reservations are available for your requested time. Set 'wait_for_opening' to true if you want me to keep trying for you.")
+    
+    return some_selection_made
     
 def book_reservation():
     # select vehicle information - Car
