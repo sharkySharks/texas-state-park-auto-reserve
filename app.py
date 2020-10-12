@@ -23,29 +23,27 @@ def main():
     driver.get("https://texasstateparks.reserveamerica.com/")
 
     try:
-        selection_made = False
-  
         sign_in()
         search_for_location()
         selection_made = select_reservation()
-        if not rd["wait_for_opening"]:
-            if not selection_made:
+        if not selection_made:
+            if rd["wait_for_opening"]:
+                # check every 30 seconds for an opening
+                while not selection_made:
+                    # only continue processing if the requested date is earlier than the current date
+                    today = date.today()
+                    requested_date = datetime.date(datetime.strptime(rd["arrival_date"], '%m/%d/%Y'))
+                    if today > requested_date:
+                        raise ValueError(f'requested date ( {requested_date} ) is after current date ( {today} )')
+
+                    print(f'[{datetime.now(tz=None)}] Waiting for opening in reservation...')
+                    time.sleep(30)
+                    driver.refresh()
+                    selection_made = select_reservation()
+            else:
                 print("No reservations are available for your requested time. Set 'wait_for_opening' to true if you want me to keep trying for you.")
+                driver.close()
                 return
-        elif rd["wait_for_opening"]:
-            # check every 30 seconds for an opening
-            while not selection_made:
-                # only continue processing if the requested date is earlier than the current date
-                today = date.today()
-                requested_date = datetime.date(datetime.strptime(rd["arrival_date"], '%m/%d/%Y'))
-                if today > requested_date:
-                    raise ValueError(f'requested date ( {requested_date} ) is after current date ( {today} )')
-
-                print("Waiting for opening in reservation...")
-                time.sleep(30)
-                driver.refresh()
-                selection_made = select_reservation()
-
         book_reservation()
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
