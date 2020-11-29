@@ -42,5 +42,14 @@ I use [selenium web driver for python](https://selenium-python.readthedocs.io/in
 
 If the dates are already booked then the application continuously checks for avilability on the requested days until either, a) an available spot opens up, then it books the opening, or b) stops after the requestor's visitation date has passed.
 
+## Future Features
+
+"...a work is never truly completed [...] but abandoned..." Paul Valéry
+
+Nice-to-have features:
+- add features for reserving camp grounds (this application was built specifically with day trip reservations)
+- deploy application and make this a SaaS product so that people do not have to run the code locally
+- add testing
+
 ## Questions or feedback?
 Feel free to submit a github issue.
