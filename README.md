@@ -23,19 +23,27 @@ python3 -m venv ENV
 source ENV/bin/activate
 pip3 install -r requirements.txt
 python3 app.py
+
+# run this command to exit venv activate mode and return to regular shell environment
+deactivate
 ```
 ### Values for reservation_details.json
-| Key                   | Default Values (type)         | Description  |
-|---                    |---                            |---           |
-| `destination`         | `""` (string)                 | The Texas State Park you want to visit |
-| `arrival_date`        | `"MM/DD/YYYY"` (string)       | First day you want to visit, format is important: `MM/DD/YYYY` |
-| `days_of_stay`        | `0` (integer)                 | Number of days you want to stay |
-| `number_of_vehicles`  | `0` (integer)                 | how many vehicles are going into the park |
-| `number_of_adults`    | `0` (integer)                 | how many adults are going |
-| `number_of_children`  | `0` (integer)                 | how many children are going |
-| `wait_for_opening`    | `false` (bool)                | continuously check for an opening an auto book when one is available |
-| `preferences`         | `[ "either" ]` (array)        | length should match `days_of_stay`. values are: `morning`, `afternoon`, `either` |
-| `credit_card`         | empty strings object          | credit card information for booking |
+| Key                              | Default Values (type)         | Description  |
+|---                               |---                            |---           |
+| `destination`                    | `""` (string)                 | The Texas State Park you want to visit |
+| `interest`                       | `""` (string)                 | Options: `camping` or `day pass` |
+| `arrival_date`                   | `"MM/DD/YYYY"` (string)       | First day you want to visit, format is important: `MM/DD/YYYY` |
+| `days_of_stay`                   | `0` (integer)                 | Number of days you want to stay |
+| `number_of_vehicles`             | `0` (integer)                 | how many vehicles are going into the park |
+| `number_of_adults`               | `0` (integer)                 | how many adults are going |
+| `number_of_children`             | `0` (integer)                 | how many children are going |
+| `wait_for_opening`               | `false` (bool)                | continuously check for an opening and auto book when one is available |
+| `camp_site_selection`            | empty strings object          | Camp Site Options |
+| `camp_site_selection.type`       | `""` (string)                 | Camp Site type. Supported options: `tent`, `rv`, `cabin` |
+| `camp_site_selection.preference` | `"any"` (string)              | Camp Site preference. Supported options: `electric`, `primitive`, `any` |
+| `day_pass_selection`             | empty strings object          | Day Pass Options |
+| `day_pass_selection.preferences` | `[ "either" ]` (array)        | length should match `days_of_stay`. values are: `morning`, `afternoon`, `either` |
+| `credit_card`                    | empty strings object          | credit card information for booking |
 
 ## What is the application doing exactly?
 I use [selenium web driver for python](https://selenium-python.readthedocs.io/index.html) to navigate to the Texas State Park website, login, and go through the reservation steps. If the days the requestor want to go to the park are available, then I look at the requestor's preferences for morning or afternoon visitation and make the reservation, including payment. 
@@ -47,8 +55,9 @@ If the dates are already booked then the application continuously checks for avi
 "...a work is never truly completed [...] but abandoned..." Paul Valéry
 
 Nice-to-have features:
-- add features for reserving camp grounds (this application was built specifically with day trip reservations)
-- deploy application and make this a SaaS product so that people do not have to run the code locally
+- add features for reserving more camp grounds. currently only `tent` camp option is available
+- add json value validation for `reservation_details.json`
+- add deploy code for application so that people do not have to run the code locally on their computer
 - add testing
 
 ## Questions or feedback?

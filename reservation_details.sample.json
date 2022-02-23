@@ -6,13 +6,20 @@
     "number_of_adults": 0,
     "number_of_children": 0,
     "wait_for_opening": false,
-    "preferences": [
-        "either"
-    ],
+    "interest": "",
+    "camp_site_selection": {
+        "type": "",
+        "preference": "any"
+    },
+    "day_pass_selection": {
+        "preferences": [
+            "either"
+        ]
+    },
     "credit_card": {
         "type": "",
         "number": "",
-        "cvc" : "",
+        "cvc": "",
         "exp_month": "",
         "exp_year": "",
         "first_name": "",
