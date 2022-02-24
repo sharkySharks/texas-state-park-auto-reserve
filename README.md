@@ -28,18 +28,21 @@ python3 app.py
 deactivate
 ```
 ### Values for reservation_details.json
+There are limited options supported at this time. Some options will have some defaults that you can edit after your reservation is made.
+
 | Key                              | Default Values (type)         | Description  |
 |---                               |---                            |---           |
-| `destination`                    | `""` (string)                 | The Texas State Park you want to visit |
+| `destination`                    | `""` (string)                 | The Texas State Park you want to visit - should be the first result when searching on the website. |
 | `interest`                       | `""` (string)                 | Options: `camping` or `day pass` |
 | `arrival_date`                   | `"MM/DD/YYYY"` (string)       | First day you want to visit, format is important: `MM/DD/YYYY` |
 | `days_of_stay`                   | `0` (integer)                 | Number of days you want to stay |
-| `number_of_vehicles`             | `0` (integer)                 | how many vehicles are going into the park |
+| `number_of_vehicles`             | `1` (integer)                 | how many vehicles |
+| `type_of_vehicle`                | `""` (string)                 | type of vehicle. options: `car`, `truck`, `suv`, `van` |
 | `number_of_adults`               | `0` (integer)                 | how many adults are going |
 | `number_of_children`             | `0` (integer)                 | how many children are going |
 | `wait_for_opening`               | `false` (bool)                | continuously check for an opening and auto book when one is available |
 | `camp_site_selection`            | empty strings object          | Camp Site Options |
-| `camp_site_selection.type`       | `""` (string)                 | Camp Site type. Supported options: `tent`, `rv`, `cabin` |
+| `camp_site_selection.type`       | `""` (string)                 | Camp Site type. Supported options: `tent` |
 | `camp_site_selection.preference` | `"any"` (string)              | Camp Site preference. Supported options: `electric`, `primitive`, `any` |
 | `day_pass_selection`             | empty strings object          | Day Pass Options |
 | `day_pass_selection.preferences` | `[ "either" ]` (array)        | length should match `days_of_stay`. values are: `morning`, `afternoon`, `either` |
@@ -48,7 +51,7 @@ deactivate
 ## What is the application doing exactly?
 I use [selenium web driver for python](https://selenium-python.readthedocs.io/index.html) to navigate to the Texas State Park website, login, and go through the reservation steps. If the days the requestor want to go to the park are available, then I look at the requestor's preferences for morning or afternoon visitation and make the reservation, including payment. 
 
-If the dates are already booked then the application continuously checks for avilability on the requested days until either, a) an available spot opens up, then it books the opening, or b) stops after the requestor's visitation date has passed.
+If the dates are already booked then the application continuously checks for availability on the requested days until either, a) an available spot opens up, then it books the opening, or b) stops after the requestor's visitation date has passed.
 
 ## Future Features
 
@@ -56,9 +59,10 @@ If the dates are already booked then the application continuously checks for avi
 
 Nice-to-have features:
 - add features for reserving more camp grounds. currently only `tent` camp option is available
-- add json value validation for `reservation_details.json`
+- add json value validation for `reservation_details.json` and validate against website limits
+- replace `time.sleep` with `WebDriverWait` - better practice with selenium to wait for an element than an arbitrary sleep time
 - add deploy code for application so that people do not have to run the code locally on their computer
 - add testing
 
 ## Questions or feedback?
-Feel free to submit a github issue.
+Feel free to submit a github issue or pull request

@@ -10,7 +10,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
 # globals
@@ -152,27 +154,38 @@ def select_camping_reservation():
     some_selection_made = False
 
     # no available options for camping
-    available_options=driver.find_elements(By.CSS_SELECTOR, "div.alternativeSuggestion")
-    if len(available_options) == 0:
+    no_options=driver.find_elements(By.XPATH, "//div[@class='site_types_content']//div[text()='ALL (0)']")
+    if len(no_options) > 0:
         return some_selection_made
 
-    # 
-    # LEFT OFF HERE: 
-    # - need to select the first camp site option and then select the default day selections
-    #   for some reason it is not clicking the link
-    # 
     if rd["camp_site_selection"]["preference"] == "any":
-        first_option=driver.find_elements(By.XPATH, "//div[contains(text(), 'available')]//a[@class='book now']")
-        ActionChains(driver).move_to_element(first_option).perform()
-        time.sleep(3)
-        first_option.click()
-        time.sleep(100000)
+        print(f'Camp Site Preference: {rd["camp_site_selection"]["preference"]}')
     elif rd["camp_site_selection"]["preference"] == "electric":
-        print()
+        print(f'Camp Site Preference: {rd["camp_site_selection"]["preference"]}')
+        # select electric option filter if available
+        electric_sites=driver.find_elements(By.XPATH, "//div[@class='site_types_content']//a[contains(text(), 'Campsite Electric')]")
+        if len(electric_sites) == 0:
+            return some_selection_made
+        electric_sites[0].click()
+        time.sleep(3)
     elif rd["camp_site_selection"]["preference"] == "primitive":
-        print()
+        print(f'Camp Site Preference: {rd["camp_site_selection"]["preference"]}')
+        # select primitive option filter if available
+        primitive_sites=driver.find_elements(By.XPATH, "//div[@class='site_types_content']//a[contains(text(), 'Campsite Primitive')]")
+        if len(primitive_sites) == 0:
+            return some_selection_made
+        primitive_sites[0].click()
+        time.sleep(3)
     else:
         raise ValueError(f'camp site select preference options are: "any", "electric", "primitive". received: {rd["camp_site_selection"]["preference"]}')
+
+    # always choose first option
+    all_options=driver.find_elements(By.XPATH, "//div[contains(text(), 'available')]//a[@class='book now']")
+    ActionChains(driver).move_to_element(all_options[0]).perform()
+    all_options[0].click()
+    time.sleep(3)
+    ActionChains(driver).move_to_element(driver.find_element(By.CSS_SELECTOR, "button#btnbookdates")).click().perform()
+    return True
     
     
 def select_day_pass_reservation():
@@ -225,9 +238,15 @@ def select_day_pass_reservation():
     return some_selection_made
     
 def book_reservation():
-    # select vehicle information - Car
-    driver.find_element(By.XPATH, "//select[@id='0_vehicletype']/option[text()='Car']").click()
-
+    # select vehicle information - always select a vehicle
+    vehicle_type="Car"
+    if rd["type_of_vehicle"] == "truck" or rd["type_of_vehicle"] == "suv" or rd["type_of_vehicle"] == "van":
+        vehicle_type="Truck/SUV/Van"
+    else:
+        raise ValueError(f'type_of_vehicle should be one of "car", "truck", "suv", "van". Received: {rd["type_of_vehicle"]}')
+    select_interest=Select(driver.find_element(By.ID, "0_vehicletype"))
+    select_interest.select_by_visible_text(vehicle_type)
+   
     # enter number of adults
     adults = driver.find_element(By.ID, "v_qtyPersons_1id")
     adults.clear()
@@ -240,7 +259,6 @@ def book_reservation():
     
     # agree to information
     driver.find_element(By.ID, "agreement").click()
-    
     # go to shopping cart
     driver.find_element(By.ID, "continueshop").click()
     driver.find_element(By.ID, "chkout").click()
@@ -276,7 +294,7 @@ def book_reservation():
     driver.find_element(By.ID, "ackacc").click()
 
     # make reservation
-    # driver.find_element(By.ID, "chkout").click()
+    driver.find_element(By.ID, "chkout").click()
 
 if __name__ == "__main__":
     main()
