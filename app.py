@@ -78,6 +78,7 @@ def sign_in():
     driver.find_element(By.ID, "signinbutton").click()
 
 def search_for_location(interest):
+    time.sleep(1)
     # make reservation link
     driver.find_element(By.ID, "Home").click()
     # select location
