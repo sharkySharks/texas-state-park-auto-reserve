@@ -48,6 +48,7 @@ def main():
 
                     print(f'[{datetime.now(tz=None)}] Waiting for opening in reservation...')
                     time.sleep(30)
+
                     driver.refresh()
                     selection_made=select_reservation(rd["interest"])
             else:
@@ -55,6 +56,9 @@ def main():
                 driver.close()
                 return
         book_reservation()
+        # TODO: verify the booking was successful before claiming it was successful
+        # there is not an error returned when checkout is unsuccessful so need to verify against
+        # confirmation text on the screen
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
         print(f'Errors returned: {e}')
@@ -76,6 +80,8 @@ def sign_in():
     password.send_keys(os.environ.get("TEXAS_STATE_PARK_PASSWORD"))
     time.sleep(1)
     driver.find_element(By.ID, "signinbutton").click()
+    # there is a login captcha that needs to be manually selected
+    time.sleep(20)
 
 def search_for_location(interest):
     time.sleep(1)
@@ -296,6 +302,10 @@ def book_reservation():
 
     # make reservation
     driver.find_element(By.ID, "chkout").click()
+    # after seleecting the reservation there is a 15 min hold before it is released
+    # there is also a captcha that pops up that needs to be manually selected
+    os.system("say captchachachachachachachachachacha")
+    time.sleep(15*60)
 
 if __name__ == "__main__":
     main()
